@@ -162,7 +162,7 @@ start_vms() {
         # NEEDS.
         # IT MUST BE DONE FOR EACH VM. I insist.
         #
-        # config.vm.provision "shell", path: "../utils/vm_env_setup.sh"
+        # config.vm.provision "shell", path: "../utils/sharing-vm-setup.sh"
 
         # Execute the script within the vm (see above)
         # vagrant provision
