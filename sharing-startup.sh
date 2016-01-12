@@ -11,6 +11,7 @@ readonly BASEDIR="$HOME/dev/PhD"
 readonly VM1="$BASEDIR/cozy-vm1"
 readonly VM2="$BASEDIR/cozy-vm2"
 readonly VMS="$VM1 $VM2"
+readonly NODE="v0.10.25"
 readonly BRANCH="sharing"
 
 # In Archlinux I have to load the three following modules if I want my virtual
@@ -51,6 +52,22 @@ load_ssh_key() {
     echo "[STARTUP] Adding ssh key: done."
 }
 
+
+# Check the version of node that is currently in use
+check_node_version()
+{
+    echo "[STARTUP] Checking node version."
+
+    local node_version=$(node --version)
+    if [ $node_version != $NODE ]
+    then
+        echo -n "[STARTUP][SUDO] Installing and/or switching to node version "
+        echo    "$NODE"
+        (set -x ; sudo -k n $NODE)
+    fi
+
+    echo "[STARTUP] Checking node version: done."
+}
 
 update_git_repositories() {
     echo "[STARTUP] Updating repositories."
@@ -174,6 +191,7 @@ start_vms() {
 main() {
     load_modules
     load_ssh_key
+    check_node_version
     update_git_repositories
     start_vms
 }
