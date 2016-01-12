@@ -27,13 +27,16 @@ load_modules() {
     do
         if !(lsmod | grep $module &> /dev/null)
         then
-            echo "    [SUDO] Loading: $module"
-            sudo modprobe $module
+            echo "[STARTUP][SUDO] Loading: $module"
+            # Putting the command inside parantheses runs it within a subshell
+            # in which we ask to output every command issued with the "set -x".
+            (set -x ; sudo -k modprobe $module)
         fi
     done
 
     echo "[STARTUP] Loading modules: done."
 }
+
 
 # This is just here so that I don't forget to do it...
 load_ssh_key() {
