@@ -22,7 +22,7 @@ init_replacement_app() {
     do
         cd "$BASEDIR/$dir"
 
-        if [ $(git rev-parse --verify $BRANCH &> /dev/null) ]
+        if (git rev-parse --verify $BRANCH &> /dev/null)
         then
             echo "[INIT] $(pwd) npm install --silent"
             sudo npm install --silent
