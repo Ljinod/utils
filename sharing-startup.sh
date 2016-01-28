@@ -7,79 +7,18 @@
 # https://stackoverflow.com/questions/171550/find-out-which-remote-branch-a-local-branch-is-tracking
 # https://unix.stackexchange.com/questions/146942/how-can-i-test-if-a-variable-is-empty-or-contains-only-spaces
 
-# Colors!
-readonly Green='\e[0;32m'
-readonly Yellow='\e[0;33m'
-readonly IRed='\e[0;91m'
-readonly On_Red='\e[41m'
-readonly Blue='\e[0;34m'
-readonly Color_Off='\e[0m'
-
-# Messages indicators
-readonly ERROR="error"
-readonly WARNING="warning"
-readonly INFO="info"
-readonly SUDO="sudo"
+readonly SCRIPT_BASE_DIR="$HOME/dev/PhD/utils"
+source $SCRIPT_BASE_DIR/echo_script.sh
+source $SCRIPT_BASE_DIR/check_node_version.sh
 
 # Global variables
 readonly BASEDIR="$HOME/dev/PhD"
 readonly VM1="$BASEDIR/cozy-vm1"
 readonly VM2="$BASEDIR/cozy-vm2"
 readonly VMS="$VM1 $VM2"
-readonly NODE="v0.10.25"
 readonly BRANCH="sharing"
+readonly SCRIPT_NAME="startup"
 
-
-
-echo_script() {
-    # the "-e" argument is to process the colors, the "-n" is so that the next
-    # echo command is not printed on a new line but appended to this one
-    echo -en "${Green}startup${Color_Off} - "
-
-    # if there is an argument then process it: there should normally be more
-    # than one but this tests is there just to make sure no errors linked to
-    # the script itself are printed...
-    if [ "$#" -gt 0 ]
-    then
-
-        local color=${Color_Off}
-
-        for arg in "$@"
-        do
-            case $arg in
-                $ERROR)
-                    echo -en "${On_Red}${arg}${Color_Off}  "
-                    ;;
-                $WARNING)
-                    echo -en "${Yellow}${arg}${Color_Off}  "
-                    ;;
-                $SUDO)
-                    echo -en "${IRed}${arg}${Color_Off}  "
-                    ;;
-                *)
-                    # If this is not a special message - meaning it does not
-                    # match the case expressed before - then it is an
-                    # informative message hence I want to display "INFO" before
-                    if [ "$arg" = "${1}" ]
-                    then
-                        echo -en "${Blue}${INFO}${Color_Off}  "
-                    fi
-
-                    # I don't want to have the next message appended to this
-                    # one so if it's the last argument I omit the "-n" option
-                    if [ "$arg" = "${@:$#}" ]
-                    then
-                        echo -e "$arg"
-                    # Not the first argument nor the last: I want to append
-                    # what appears next
-                    else
-                        echo -en "$arg"
-                    fi
-                    ;;
-            esac
-        done
-    fi
-}
 
 # In Archlinux I have to load the three following modules if I want my virtual
 # machines to launch and if I want to be able to communicate an host-only
@@ -120,60 +59,6 @@ load_ssh_key() {
     fi
 
     echo_script "Adding ssh key: done."
-}
-
-
-# Check the version of node that is currently in use
-check_node_version()
-{
-    echo_script "Checking node version."
-
-    local node_version=$(node --version)
-    if [ $node_version != $NODE ]
-    then
-        echo_script $SUDO "Installing and/or switching to node version " \
-            "$NODE"
-        (set -x ; sudo -k n $NODE)
-    fi
-
-    echo_script "Checking node version: done."
-}
-
-
-# If the repository containing an application has been updated I need to
-# rebuild the entire application
-build_application()
-{
-    echo_script "Building -> $(pwd)."
-
-    # If the package.json file has changed I might need to install new
-    # dependencies
-    npm install --silent &> /dev/null
-
-    # If the application has a client folder then I update it as well
-    if [ -d client ]
-    then
-        cd client
-
-        # Same as above: if new dependencies were added I need to install them
-        npm install --silent &> /dev/null
-
-        # If the client side relies on bower
-        if [ -f bower.json ]
-        then
-            bower install --silent &> /dev/null
-        fi
-
-        # I build the client side
-        brunch build
-
-        cd ..
-    fi
-
-    # Build the application!
-    cake build
-
-    echo_script "Building $(pwd): done."
 }
 
 
@@ -251,7 +136,7 @@ update_git_repositories() {
                             else
                                 # The files has been updated, the application
                                 # should be rebuilt
-                                build_application
+                                $SCRIPT_BASE_DIR/cozy--build-app.sh "$(pwd)"
                             fi
                         fi
                     fi
@@ -291,7 +176,7 @@ update_git_repositories() {
 
 
 start_vms() {
-    for vm in $VMS
+    for vm in $VM1
     do
         cd $vm
 
@@ -319,9 +204,8 @@ start_vms() {
 main() {
     load_modules
     load_ssh_key
-    check_node_version
     update_git_repositories
-    #start_vms
+    # start_vms
 }
 
 main
